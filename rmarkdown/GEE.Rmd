@@ -1,6 +1,6 @@
 ---
 title: "Ecuaciones de estimación generalizada"
-author: "Adriana Mogollón"
+author: "AVMZ"
 output: html_document
 ---
 
