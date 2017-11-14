@@ -2,6 +2,7 @@
 title: "Ecuaciones de estimación generalizada"
 author: "AVMZ"
 output: html_document
+bibliography: citation.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -17,11 +18,11 @@ library(lmtest)
 library(readxl)
 library(DT)
 library(broom)
-datos <- read_excel("/Users/Martin/Downloads/Datos.xlsx")
+datos <- read_excel("/Users/Martin/GitHub/bocachico/data/Datos.xlsx")
 datatable(datos)
 ```
 
-Se convirtió el tratamiento testigo en un control verdadero:
+Modificación del tratamiento testigo en un control verdadero:
 
 ```{r}
 attach(datos)
@@ -34,7 +35,7 @@ for (i in 1:n){ ####Dejar tratamiento 4 (control) como base
 # Tratamiento
 ```
 
-Se convierten datos en objetos experimentales
+Se convierten datos en objetos experimentales que sean manipulables estadísticamente en R
 
 ```{r}
 trat<-as.factor(Tratamiento)
@@ -47,7 +48,22 @@ longitud<-Longitud
 
 ## Cálculo del _Factor de condición múltiple_
 
-De acuerdo con la literatura especializada, se calcula el KM
+De acuerdo con [@rodriguez1993relacion], el cálculo del factor de condición múltiple (KM), es el siguiente:
+
+$$
+KM=\left( \frac{W}{L^bA^c} \right) \times 10
+$$
+donde $W$ es el peso del animal, $L$ la longitud, $b$ el coeficiente de la regresión de la longitud, $A$ la altura o profundidad del animal, $c$ el coeficiente de la regresión de la altura. Los coeficientes $b$ y $c$ se calcularán ajustando un modelo lineal en donde $W$ será la respuesta y $L$ y $A$ son variables explicativas. De esta forma,
+
+$$
+W=aL^bA^c
+$$
+cuya linealización estaría dada por:
+
+$$
+\log W=\log a + b\log L + c \log A
+$$
+De esta forma, el modelo de estimación de los parámetros del KM, es:
 
 ```{r}
 lpeso<-log(peso)
@@ -60,8 +76,8 @@ summary(fit)
 
 ### Revision puntos de influencia y de alto leverage
 
-```{r echo=FALSE}
-source("/Users/Martin/Downloads/FuncionesEjercicio3.txt")
+```{r }
+source("/Users/Martin/GitHub/bocachico/script/FuncionesEjercicio3.txt")
 
 Leverage.normal(fit,1,"") 
 qqplot.normal(fit,500,0.01,1,"")
@@ -135,7 +151,7 @@ Usando la funcion `geepack` se observa que los parametros que involucran el efec
 A continuación, se ajustan los modelos tomando la diferencia entre los valores del 4 de agosto y el 17 de julio
 
 ```{r}
-datos <- read_excel("/Users/Martin/Downloads/Datos.xlsx", sheet = "Hoja3")
+datos <- read_excel("/Users/Martin/GitHub/bocachico/data/Datos.xlsx", sheet = "Hoja3")
 datatable(datos)
 ```
 
@@ -179,7 +195,7 @@ summary(fit)
 ### Revision puntos de influencia y de alto leverage
 
 ```{r echo=FALSE}
-source("/Users/Martin/Downloads/FuncionesEjercicio3.txt")
+source("/Users/Martin/GitHub/bocachico/script/FuncionesEjercicio3.txt")
 
 Leverage.normal(fit,1,"") 
 qqplot.normal(fit,500,0.01,1,"")
@@ -252,4 +268,6 @@ anova(mo1)
 ```
 
 Usando la funcion `geepack` se observa que los parametros que involucran el efecto medio de los tratamientos no son significativos, conclusion que se corrobora con el p-valor obtenido en el anova > 0.05 por lo que no hay diferencias significativas entre tratamientos
+
+`r if (knitr:::is_html_output()) '# Referencias {-}'`
 
