@@ -1,0 +1,255 @@
+---
+title: "Ecuaciones de estimación generalizada"
+author: "Adriana Mogollón"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Datos medición final
+
+Inicialmente, se realizó el ajuste del modelo utilizando exclusivamente los datos del 4 de agosto.
+
+```{r message=FALSE}
+library(lmtest)
+library(readxl)
+library(DT)
+library(broom)
+datos <- read_excel("/Users/Martin/Downloads/Datos.xlsx")
+datatable(datos)
+```
+
+Se convirtió el tratamiento testigo en un control verdadero:
+
+```{r}
+attach(datos)
+n<-132
+for (i in 1:n){ ####Dejar tratamiento 4 (control) como base
+  if (Tratamiento[i]==4){
+    Tratamiento[i]=0
+  }
+}
+# Tratamiento
+```
+
+Se convierten datos en objetos experimentales
+
+```{r}
+trat<-as.factor(Tratamiento)
+pec<-as.factor(Estanque)
+
+peso<-Peso
+altura<-Altura
+longitud<-Longitud
+```
+
+## Cálculo del _Factor de condición múltiple_
+
+De acuerdo con la literatura especializada, se calcula el KM
+
+```{r}
+lpeso<-log(peso)
+lalt<-log(altura)
+llong<-log(longitud)
+
+fit<-lm(lpeso~lalt+llong)
+summary(fit)
+```
+
+### Revision puntos de influencia y de alto leverage
+
+```{r echo=FALSE}
+source("/Users/Martin/Downloads/FuncionesEjercicio3.txt")
+
+Leverage.normal(fit,1,"") 
+qqplot.normal(fit,500,0.01,1,"")
+Influence.normal(fit,3,2,1,"")
+```
+
+Ajuste de modelo sin observación con alto apalancamiento (observación 61)
+
+```{r}
+fit1<-lm(lpeso~lalt+llong, subset=-c(61))
+summary(fit1)
+```
+
+Se evidencia que los estimadores asociados cambian notoriamente por la influencia de la observación 61
+
+### FCM
+
+```{r}
+# Modelo completo
+b<-coef(fit)[3]
+c<-coef(fit)[2]
+
+# Modelo sin observación 61
+b1<-coef(fit1)[3]
+c1<-coef(fit1)[2]
+
+
+KM=peso/(longitud^b*altura^c)*10
+KM
+
+KM1=peso/(longitud^b1*altura^c1)*10
+KM1
+```
+
+### GEE (Ecuaciones de estimacion generalizadas)
+
+```{r message=FALSE}
+library (gee)
+plot(trat,KM1)
+
+mod<-gee(KM1~trat,id=pec)
+summary(mod)
+
+mod1<-gee(KM~trat,id=pec)
+summary(mod1)
+```
+
+#### Interpretación
+
+```{r}
+library (geepack)
+
+form<-formula(KM1~trat)
+mo<-geeglm(form,id=pec)
+summary(mo)
+
+form1<-formula(KM~trat)
+mo1<-geeglm(form1,id=pec)
+summary(mo1)
+
+anova(mo)
+anova(mo1)
+
+```
+
+Usando la funcion `geepack` se observa que los parametros que involucran el efecto medio de los tratamientos no son significativos, conclusion que se corrobora con el p-valor obtenido en el anova > 0.05 por lo que no hay diferencias significativas entre tratamientos.
+
+
+## Datos diferencia
+
+A continuación, se ajustan los modelos tomando la diferencia entre los valores del 4 de agosto y el 17 de julio
+
+```{r}
+datos <- read_excel("/Users/Martin/Downloads/Datos.xlsx", sheet = "Hoja3")
+datatable(datos)
+```
+
+Se convirtió el tratamiento testigo en un control verdadero:
+
+```{r}
+attach(datos)
+n<-132
+for (i in 1:n){ ####Dejar tratamiento 4 (control) como base
+  if (Tratamiento[i]==4){
+    Tratamiento[i]=0
+  }
+}
+# Tratamiento
+```
+
+Se convierten datos en objetos experimentales
+
+```{r}
+trat<-as.factor(Tratamiento)
+pec<-as.factor(Estanque)
+
+peso<-Peso+1
+altura<-Altura+1
+longitud<-Longitud+1
+```
+
+## Cálculo del _Factor de condición múltiple_
+
+De acuerdo con la literatura especializada, se calcula el KM
+
+```{r}
+lpeso<-log(peso)
+lalt<-log(altura)
+llong<-log(longitud)
+
+fit<-lm(lpeso~lalt+llong)
+summary(fit)
+```
+
+### Revision puntos de influencia y de alto leverage
+
+```{r echo=FALSE}
+source("/Users/Martin/Downloads/FuncionesEjercicio3.txt")
+
+Leverage.normal(fit,1,"") 
+qqplot.normal(fit,500,0.01,1,"")
+Influence.normal(fit,3,2,1,"")
+```
+
+Ajuste de modelo sin observación con alto apalancamiento (observación 61)
+
+```{r}
+fit1<-lm(lpeso~lalt+llong, subset=-c(61))
+summary(fit1)
+```
+
+```{r}
+fit2<-lm(lpeso~lalt+llong, subset=-c(132,61))
+summary(fit2)
+```
+
+
+Se evidencia que los estimadores asociados a la long cambian notoriamente por la influencia de las observaciones 61 y 132
+
+### FCM
+
+```{r}
+# Modelo completo
+b<-coef(fit)[3]
+c<-coef(fit)[2]
+
+# Modelo sin observación 61
+b1<-coef(fit2)[3]
+c1<-coef(fit2)[2]
+
+
+KM=peso/(longitud^b*altura^c)*10
+KM
+
+KM1=peso/(longitud^b1*altura^c1)*10
+KM1
+```
+
+### GEE (Ecuaciones de estimacion generalizadas)
+
+```{r message=FALSE}
+library (gee)
+plot(trat,KM1)
+
+mod<-gee(KM1~trat,id=pec)
+summary(mod)
+
+mod1<-gee(KM~trat,id=pec)
+summary(mod1)
+```
+
+#### Interpretación
+
+```{r}
+library (geepack)
+
+form<-formula(KM1~trat)
+mo<-geeglm(form,id=pec)
+summary(mo)
+
+form1<-formula(KM~trat)
+mo1<-geeglm(form1,id=pec)
+summary(mo1)
+
+anova(mo)
+anova(mo1)
+
+```
+
+Usando la funcion `geepack` se observa que los parametros que involucran el efecto medio de los tratamientos no son significativos, conclusion que se corrobora con el p-valor obtenido en el anova > 0.05 por lo que no hay diferencias significativas entre tratamientos
+
